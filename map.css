@@ -1,0 +1,12 @@
+#map {
+  width: 1280px;
+  height: 800px;
+}
+
+.leaflet-popup-content dt {
+  font-weight: bold;
+}
+
+.leaflet-popup-content dd {
+  margin-left: 0;
+}
