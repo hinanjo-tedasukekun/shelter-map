@@ -8,10 +8,12 @@
     <script src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js"></script>
   </head>
   <body>
-    <h1>避難所一覧</h1>
-    <p>合計避難者数 <strong id="total-num"></strong></p>
-    <div id="map">
+    <div class="main-container">
+      <p id="errors"></p>
+      <p>合計避難者数 <strong id="total-num">0</strong></p>
+      <div id="map"></div>
     </div>
+    <script src="http://code.jquery.com/jquery-2.2.0.min.js"></script>
     <script src="map.js"></script>
   </body>
 </html>

@@ -2,31 +2,31 @@
  * 避難所マップのテスト
  */
 
-(function () {
-  // ポップアップを複数開けるように拡張する
-  L.Map = L.Map.extend({
-    openPopup: function (popup, latlng, options) { 
-      if (!(popup instanceof L.Popup)) {
-        var content = popup;
+// ポップアップを複数開けるように拡張する
+L.Map = L.Map.extend({
+  openPopup: function (popup, latlng, options) {
+    if (!(popup instanceof L.Popup)) {
+      var content = popup;
 
-        popup = new L.Popup(options).setContent(content);
-      }
-
-      if (latlng) {
-        popup.setLatLng(latlng);
-      }
-
-      if (this.hasLayer(popup)) {
-        return this;
-      }
-
-      // NOTE THIS LINE : COMMENTING OUT THE CLOSEPOPUP CALL
-      //this.closePopup(); 
-      this._popup = popup;
-      return this.addLayer(popup);
+      popup = new L.Popup(options).setContent(content);
     }
-  });
 
+    if (latlng) {
+      popup.setLatLng(latlng);
+    }
+
+    if (this.hasLayer(popup)) {
+      return this;
+    }
+
+    // NOTE THIS LINE : COMMENTING OUT THE CLOSEPOPUP CALL
+    //this.closePopup();
+    this._popup = popup;
+    return this.addLayer(popup);
+  }
+});
+
+$(function () {
   var
     // 避難所オブジェクトのプロトタイプ
     shelterProto = {
@@ -73,6 +73,7 @@
     },
 
     // 避難所一覧
+    /*
     shelters = [
       newShelter(1, "白脇小学校", "南区寺脇町431", [34.681929, 137.745106], 100),
       newShelter(2, "砂丘小学校", "南区白羽町2512", [34.667674, 137.725985], 100),
@@ -91,50 +92,80 @@
       newShelter(15, "可美中学校", "南区増楽町700", [34.687923, 137.690746], 100),
       newShelter(16, "南の星小学校", "南区西島町1148-1", [34.662516, 137.768776], 100),
     ],
+    */
 
     // 高いビル一覧
     buildings = [
       newShelter(0, '浜松南区役所避難所', '南区江之島町600番地の1', [34.66751, 137.75212], 1234),
-      newShelter(19, 'ポリテクカレッジ浜松避難所', '南区法枝町693', [34.67734, 137.72008], 567),
+      //newShelter(19, 'ポリテクカレッジ浜松避難所', '南区法枝町693', [34.67734, 137.72008], 567),
     ],
 
-    // 避難者数の合計を計算する
-    addNumOfRefugees = function addNumOfRefugees(acc, s) { return acc + s.numOfRefugees; },
-    totalNumInShelters = shelters.reduce(addNumOfRefugees, 0),
-    totalNumInBuildings = buildings.reduce(addNumOfRefugees, 0),
-    totalNum = totalNumInShelters + totalNumInBuildings,
-
     // 地図オブジェクト
-    map = L.map('map').setView([34.67734, 137.72008], 13);
+    map = L.map('map').setView([34.67734, 137.72008], 13),
 
-  // 合計避難者数を表示する
-  document.getElementById('total-num').textContent = totalNum.toString();
+    // 地図上に描く円の大きさを返す
+    circleSize = function circleSize(shelter) {
+      return 10 * Math.sqrt(shelter.numOfRefugees);
+    },
+
+    // jQuery オブジェクト
+    $totalNum = $('#total-num'),
+    $errors = $('#errors');
 
   // OpenStreetMap サーバーから地図を表示するように設定する
   L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
 
-  // 各避難所を表示する
-  shelters.forEach(function (shelter) {
-    // 赤丸
-    L.circle(shelter.coord, shelter.numOfRefugees, {
-      color: 'red',
-      fillColor: '#f03',
-      fillOpacity: 0.25
-    }).addTo(map);
+  // 非同期通信でデータを取得する
+  $.ajax("./shelters.json", {
+    dataType: 'json',
+    success: function loadSuccess(data) {
+      // 避難者数の合計を計算する
+      var
+        shelters = data.map(function (s) {
+          return newShelter(
+            s.id,
+            s.name,
+            s.address,
+            s.coord,
+            s.numOfRefugees
+          );
+        }),
+        addNumOfRefugees = function addNumOfRefugees(acc, s) { return acc + s.numOfRefugees; },
+        totalNumInShelters = shelters.reduce(addNumOfRefugees, 0),
+        totalNumInBuildings = buildings.reduce(addNumOfRefugees, 0),
+        totalNum = totalNumInShelters + totalNumInBuildings;
 
-    // マーカー
-    L.marker(shelter.coord).
-      addTo(map).
-      bindPopup(shelter.getPopupText());
-      //openPopup();
+      $totalNum.text(totalNum);
+
+      // 各避難所を表示する
+      shelters.forEach(function (shelter) {
+        // 赤丸
+        L.circle(shelter.coord, circleSize(shelter), {
+          color: 'red',
+          fillColor: '#f03',
+          fillOpacity: 0.25
+        }).addTo(map);
+
+        // マーカー
+        L.marker(shelter.coord).
+          addTo(map).
+          bindPopup(shelter.getPopupText());
+          //openPopup();
+      });
+    },
+    error: function loadError(jqXHR, textStatus, errorThrown) {
+      $errors.
+        text(textStatus + ": " + errorThrown).
+        show();
+    }
   });
 
   // 各ビルを表示する
   buildings.forEach(function (shelter) {
     // 緑丸
-    L.circle(shelter.coord, shelter.numOfRefugees, {
+    L.circle(shelter.coord, circleSize(shelter), {
       color: 'green',
       fillColor: 'green',
       fillOpacity: 0.25
@@ -146,4 +177,4 @@
       bindPopup(shelter.getPopupText());
       //openPopup();
   });
-}());
+});

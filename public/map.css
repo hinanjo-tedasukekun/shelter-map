@@ -1,0 +1,27 @@
+body {
+  background-color: #FAFAFA;
+}
+
+.main-container {
+  width: 880px;
+  margin: 0 auto;
+}
+
+#map {
+  box-sizing: border-box;
+  width: 880px;
+  height: 640px;
+}
+
+#errors {
+  display: none;
+  color: red;
+}
+
+.leaflet-popup-content dt {
+  font-weight: bold;
+}
+
+.leaflet-popup-content dd {
+  margin-left: 0;
+}
