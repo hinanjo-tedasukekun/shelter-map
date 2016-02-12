@@ -40,6 +40,8 @@ $(function () {
       coord: null,
       // 避難者数
       numOfRefugees: 0,
+      // 更新日時
+      updatedAt: "",
 
       // ポップアップのテキストを返す
       getPopupText: function getPopupText() {
@@ -53,6 +55,8 @@ $(function () {
           this.address,
           '</dd><dt>避難者数</dt><dd>',
           this.numOfRefugees,
+          '</dd><dt>更新日時</dt><dd>',
+          this.updatedAt,
           '</dd></dl>'
         ];
         return parts.join('');
@@ -60,7 +64,7 @@ $(function () {
     },
 
     // 新しい避難所オブジェクトを返す
-    newShelter = function newShelter(id, name, address, coord, numOfRefugees) {
+    newShelter = function newShelter(id, name, address, coord, numOfRefugees, updatedAt) {
       var shelter = Object.create(shelterProto);
 
       shelter.id = id;
@@ -68,6 +72,7 @@ $(function () {
       shelter.address = address;
       shelter.coord = coord;
       shelter.numOfRefugees = numOfRefugees;
+      shelter.updatedAt = updatedAt;
 
       return shelter;
     },
@@ -96,19 +101,15 @@ $(function () {
 
     // 高いビル一覧
     buildings = [
-      newShelter(0, '浜松南区役所避難所', '南区江之島町600番地の1', [34.66751, 137.75212], 1234),
+      newShelter(0, '浜松南区役所避難所', '南区江之島町600番地の1', [34.66751, 137.75212], 1234, "2016/02/12 17:40:00"),
       //newShelter(19, 'ポリテクカレッジ浜松避難所', '南区法枝町693', [34.67734, 137.72008], 567),
     ],
 
     // 地図オブジェクト
     map = L.map('map').setView([34.67734, 137.72008], 13),
-
-    // 地図上に描く円の大きさを返す
     circleSize = function circleSize(shelter) {
       return 10 * Math.sqrt(shelter.numOfRefugees);
     },
-
-    // jQuery オブジェクト
     $totalNum = $('#total-num'),
     $errors = $('#errors');
 
@@ -129,18 +130,24 @@ $(function () {
             s.name,
             s.address,
             s.coord,
-            s.numOfRefugees
+            s.numOfRefugees,
+            s.updatedAt
           );
         }),
         addNumOfRefugees = function addNumOfRefugees(acc, s) { return acc + s.numOfRefugees; },
         totalNumInShelters = shelters.reduce(addNumOfRefugees, 0),
         totalNumInBuildings = buildings.reduce(addNumOfRefugees, 0),
-        totalNum = totalNumInShelters + totalNumInBuildings;
+        totalNum = totalNumInShelters + totalNumInBuildings,
+        now = new Date();
 
       $totalNum.text(totalNum);
 
       // 各避難所を表示する
       shelters.forEach(function (shelter) {
+        var
+          dtUpdatedAt = new Date(shelter.updatedAt),
+          marker;
+
         // 赤丸
         L.circle(shelter.coord, circleSize(shelter), {
           color: 'red',
@@ -149,10 +156,14 @@ $(function () {
         }).addTo(map);
 
         // マーカー
-        L.marker(shelter.coord).
+        marker = L.marker(shelter.coord).
           addTo(map).
           bindPopup(shelter.getPopupText());
-          //openPopup();
+
+        // 最近更新されていたらポップアップを開く
+        if (now - dtUpdatedAt < 3000) {
+          marker.openPopup();
+        }
       });
     },
     error: function loadError(jqXHR, textStatus, errorThrown) {
