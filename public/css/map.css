@@ -7,6 +7,10 @@ body {
   margin: 0 auto;
 }
 
+#total-num {
+  font-size: 180%;
+}
+
 #map {
   box-sizing: border-box;
   width: 880px;
